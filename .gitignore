@@ -1,0 +1,71 @@
+# Local secrets and authentication material
+.env
+.env.*
+!.env.example
+.ssh/
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+*.pem
+*.key
+*.p12
+*.pfx
+known_hosts
+known_hosts.*
+ssh_config.local
+credentials.json
+secrets.*
+*.token
+
+# Downloaded ssh-proxy release binaries
+ssh-proxy-windows-x64.exe
+ssh-proxy-macos-arm64
+ssh-proxy-linux-x64
+
+# Private Nano4 inspection output
+/reports/nano4-user-status-*.md
+/reports/raw/
+wallet*.txt
+hfsquota*.txt
+sacctmgr*.txt
+scontrol*.txt
+sinfo*.txt
+
+# Slurm and application logs
+/logs/
+slurm-*.out
+slurm-*.err
+*.job.out
+*.job.err
+
+# Biomedical, sequencing, and potentially identifying datasets
+/data/
+/datasets/
+/results/
+/patient-data/
+*.fastq
+*.fastq.gz
+*.fq
+*.fq.gz
+*.bam
+*.bai
+*.cram
+*.crai
+*.sam
+*.vcf
+*.vcf.gz
+*.bcf
+*.gvcf
+*.gvcf.gz
+
+# Local editor, OS, and temporary files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.tmp
+*.temp
+*.swp
+*~

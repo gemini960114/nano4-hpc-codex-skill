@@ -49,6 +49,15 @@
 - 「請產生 FastQC 的 Slurm script，明確指定 `-A PROJECT_ID` 與 `-p PARTITION`，但不要建立遠端檔案。」
 - 「請檢查我提供的 batch script 是否符合目標 partition 的 CPU、memory 與 wall-time 限制，不要執行。」
 
+這些問題應使用 `nano4-slurm-job-runner`，但只授權本地草擬或驗證，不包含遠端 setup、上傳或提交。
+
+## Job 狀態與持續監控
+
+- 「使用 `$nano4-hpc-inspector` 查看 Job `307732` 現在的狀態，只查詢一次。」
+- 「使用 `$nano4-slurm-job-runner` 每分鐘監控 Job `307732` 直到完成；這是唯讀監控，不要取消、requeue、修改檔案或重新提交。」
+- 「使用 `$nano4-slurm-job-runner` 幫我寫 Slurm 腳本但不要提交；只能在本地草擬。」
+- 「使用 `$nano4-slurm-job-runner` 提交這個 Job 並監控到完成；只授權指定工作目錄的正常 setup 與單次提交。」
+
 ## 需要明確授權的操作
 
 以下行為會改變遠端狀態，問題中必須清楚指定：
@@ -78,6 +87,6 @@
 - 「請先確認遠端目標不存在，再使用 Nano4 相容的 `scp -O` 將 `job.sh` 上傳到我指定的工作目錄；不要提交工作。」
 - 「請使用 `scp -O` 下載指定的 stdout 檔案到目前資料夾，不要下載其他結果或目錄。」
 
-`scp -O` 用於 Nano4 拒絕 SFTP subsystem 或一般 `scp` 出現 subsystem 錯誤的情況，不應當成所有 SSH 主機的通用設定。
+當目前的 `nano4-proxy` login path 拒絕 SFTP subsystem，或一般 `scp` 出現 `subsystem request failed` 時，使用 `scp -O`。這不代表 Nano4 的 dedicated file-transfer service 不支援 SFTP，也不應當成所有 SSH 主機的通用設定。
 
 不要使用模糊說法，例如「幫我處理這個 job」。若只想診斷，請明確寫「只查詢與說明，不要提交、取消或修改任何內容」。

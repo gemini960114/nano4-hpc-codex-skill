@@ -1,6 +1,8 @@
 # Nano4 Slurm Job Lifecycle
 
-Read this reference before any job setup or submission.
+Read this reference before job preparation, submission, or ongoing lifecycle monitoring. For a monitoring-only request, validate identity and job ownership, then apply the monitoring and reporting sections without preparing files or submitting anything.
+
+Unless an agent-owned remote PTY is already active, execute every Nano4 command in this reference through `ssh nano4-proxy`. Never run a bare Slurm command in the local Windows shell.
 
 ## 1. Confirm authority and targets
 
@@ -44,17 +46,17 @@ The script should include or receive at submission time:
 - strict or deliberate shell error handling appropriate to the application;
 - module or environment setup required by the workload.
 
-Do not preserve a historical `ngs62g` CPU or memory profile without rechecking the live partition. Keep `PROJECT_ID` as a placeholder until current `wallet` and access checks identify the chosen project.
+Keep `PROJECT_ID` as a placeholder until current `wallet` and access checks identify the chosen project. Recheck the selected partition's current QoS, CPU, memory, node shape, and wall-time limits before submission.
 
 ## 5. Submit exactly once
 
 Use a parseable response and explicit project and partition:
 
-```bash
-sbatch --parsable -A PROJECT_ID -p PARTITION job.sh
+```powershell
+ssh nano4-proxy 'cd -- "REMOTE_WORKDIR" && sbatch --parsable -A PROJECT_ID -p PARTITION job.sh'
 ```
 
-Require exit status zero and parse the returned `JOB_ID` or `JOB_ID;CLUSTER`. Store the numeric Job ID separately from other output.
+Replace `REMOTE_WORKDIR` with the exact, safely shell-quoted job directory. Require exit status zero and parse the returned `JOB_ID` or `JOB_ID;CLUSTER`. Store the numeric Job ID separately from other output.
 
 If the command times out, disconnects, or returns ambiguous output, do not run `sbatch` again. First query `squeue` and `sacct` using the user, job name, and submission time window. If duplication cannot be ruled out, stop and ask the user.
 
@@ -62,9 +64,9 @@ If the command times out, disconnects, or returns ambiguous output, do not run `
 
 Use a specific Job ID:
 
-```bash
-squeue -h -j JOB_ID -o "%i|%T|%P|%a|%j|%M|%l|%R"
-sacct -n -P -j JOB_ID --format=JobIDRaw,JobName,Partition,Account,State,ExitCode,Elapsed,AllocCPUS,ReqMem,MaxRSS
+```powershell
+ssh nano4-proxy 'squeue -h -j JOB_ID -o "%i|%T|%P|%a|%j|%M|%l|%R"'
+ssh nano4-proxy 'sacct -n -P -j JOB_ID --format=JobIDRaw,JobName,Partition,Account,State,ExitCode,Elapsed,AllocCPUS,ReqMem,MaxRSS'
 ```
 
 Poll at a cadence proportional to the expected runtime; do not aggressively query the scheduler. A missing `squeue` row does not by itself prove success because completed jobs leave the active queue. Confirm the terminal state with `sacct`.

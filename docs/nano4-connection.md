@@ -101,8 +101,9 @@ ssh nano4-proxy 'hostname; whoami; date --iso-8601=seconds'
 
 Codex 依任務使用不同 Skill：
 
-- 唯讀資源、wallet、partition、module、quota 或 job 狀態查詢使用 `nano4-hpc-inspector`。
-- 明確要求準備、提交、監控或控制 Slurm job 時使用 `nano4-slurm-job-runner`。
+- 唯讀資源、wallet、partition、module、quota 或單次 job 狀態查詢使用 `nano4-hpc-inspector`。
+- 本地 batch script 準備、持續監控、遠端 job setup、提交或 job control 使用 `nano4-slurm-job-runner`。
+- 持續監控既有 job 仍是唯讀行為，不代表授權取消、requeue、修改檔案或重新提交。
 - 上傳、覆寫、刪除、`sbatch`、`srun` 與 `scancel` 不會由唯讀查詢自動取得授權。
 
 ## 連線時效

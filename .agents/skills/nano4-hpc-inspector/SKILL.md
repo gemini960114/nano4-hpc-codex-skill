@@ -1,6 +1,6 @@
 ---
 name: nano4-hpc-inspector
-description: Perform read-only inspection of Nano4 HPC through the nano4-proxy SSH alias, including Slurm resources and job state, active wallet projects, account access, modules, and storage quotas. Do not use it to submit or cancel jobs or modify remote data.
+description: Perform read-only inspection of Nano4 HPC through nano4-proxy, including Slurm resources, one-time job-status queries, active wallet projects, account access, modules, and storage quotas. Do not use it for batch-script preparation, ongoing monitoring, job submission or control, file transfer, or remote changes.
 ---
 
 # Nano4 HPC Inspector
@@ -9,8 +9,8 @@ Inspect current remote state and report it in a concise, decision-ready form. Tr
 
 ## Scope and safety
 
-- This skill is read-only. It may inspect or draft a batch script locally, but it must not run `sbatch`, `srun`, `scancel`, transfer files, or change remote data.
-- Use `nano4-slurm-job-runner` when the user explicitly requests job submission, job control, remote job setup, or file transfer for a job.
+- This skill is read-only and must not prepare batch scripts, run `sbatch`, `srun`, or `scancel`, transfer files, or change remote data.
+- Use `nano4-slurm-job-runner` for batch-script preparation or validation, ongoing lifecycle monitoring, job submission or control, remote job setup, or job-related file transfer.
 - Connect only through the existing SSH alias `nano4-proxy`. Never request, enter, capture, print, or store passwords, OTP values, SSH keys, or tokens.
 - Confirm `hostname`, `whoami`, and the remote timestamp before account-specific conclusions. Compare the observed identity with any project-level expected account and stop if they differ.
 - When invoking SSH from PowerShell, keep the remote payload single-quoted where possible so variables such as `$(whoami)` are expanded remotely rather than locally.
@@ -104,16 +104,16 @@ Interpret the results as follows:
 - Report partition, maximum wall time, idle/mixed/down state, and compatible active project IDs. Separate visible-but-restricted partitions.
 - Recommend explicit `-A PROJECT_ID` and `-p PARTITION` in generated examples, but never fill `PROJECT_ID` from stale output.
 
-### Slurm job status
+### One-time Slurm job status
 
-Use structured read-only queries when the user asks about queued, running, or completed jobs:
+Use structured read-only queries when the user asks for the current state of queued, running, or completed jobs:
 
 ```bash
 ssh nano4-proxy 'squeue -h -u "$(whoami)" -o "%i|%T|%P|%a|%j|%M|%l|%R"'
 ssh nano4-proxy 'sacct -n -P -u "$(whoami)" -S today --format=JobIDRaw,JobName,Partition,Account,State,ExitCode,Elapsed,AllocCPUS,ReqMem,MaxRSS'
 ```
 
-For a known job, add `-j JOB_ID`. Explain pending reasons and terminal states, but do not cancel, requeue, or resubmit from this skill.
+For a known job, add `-j JOB_ID`. Explain pending reasons and terminal states, but do not cancel, requeue, or resubmit from this skill. Route requested repeated monitoring to `nano4-slurm-job-runner`; monitoring remains read-only and grants no mutation permission.
 
 ### Environment modules
 

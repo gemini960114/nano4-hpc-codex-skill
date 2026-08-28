@@ -11,7 +11,7 @@ Read this reference only when the user requests upload or download for a Nano4 j
 
 ## Legacy SCP compatibility
 
-Modern OpenSSH `scp` normally uses SFTP. When Nano4 rejects the SFTP subsystem or ordinary `scp` fails with a subsystem error, use legacy SCP mode with `-O` through the configured proxy alias:
+Modern OpenSSH `scp` normally uses SFTP. When the existing `nano4-proxy` path rejects the SFTP subsystem, or ordinary `scp` fails with `subsystem request failed`, use legacy SCP mode with `-O` for job-related file transfer through the configured proxy alias:
 
 ```powershell
 scp -O .\local-file nano4-proxy:/remote/path/
@@ -24,7 +24,7 @@ For directories explicitly in scope:
 scp -O -r .\local-directory nano4-proxy:/remote/path/
 ```
 
-Treat `-O` as a Nano4 compatibility method, not a universal SSH rule. If ordinary SCP succeeds, do not add `-O` merely by habit.
+This limitation applies to the current `nano4-proxy` login path and does not imply that Nano4's dedicated file-transfer service lacks SFTP support. Treat `-O` as a path-specific compatibility method, not a universal SSH rule. If ordinary SCP succeeds, do not add `-O` merely by habit.
 
 ## Verification
 

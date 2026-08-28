@@ -1,15 +1,17 @@
 ---
 name: nano4-slurm-job-runner
-description: Prepare, submit, monitor, and report explicitly authorized Nano4 Slurm jobs through nano4-proxy. Use for remote job setup, sbatch execution, job lifecycle monitoring, authorized job control, or job-related file transfer; do not infer mutation permission from an inspection request.
+description: Prepare or validate Nano4 Slurm jobs locally, perform requested ongoing job monitoring, and carry out explicitly authorized remote setup, submission, job control, or job-related file transfer through nano4-proxy. Monitoring alone does not grant mutation permission.
 ---
 
 # Nano4 Slurm Job Runner
 
-Run an authorized Nano4 Slurm workflow from preflight through final reporting. Keep authorization boundaries explicit and prevent duplicate or misdirected submissions.
+Prepare or follow a Nano4 Slurm workflow from preflight through final reporting. Keep remote authorization boundaries explicit and prevent duplicate or misdirected submissions.
 
 ## Authorization and safety
 
-- Use this skill only when the user explicitly requests a remote mutation such as job setup, submission, file transfer, interactive allocation, or job control.
+- This skill may prepare or validate a job locally and monitor an existing job when explicitly requested.
+- Remote setup, file transfer, `sbatch`, `srun`, `scancel`, requeueing, or any other remote mutation requires explicit authorization.
+- Monitoring an existing job remains read-only and does not authorize cancellation, requeueing, file changes, resubmission, or other mutation.
 - A clear submission request authorizes normal setup for that named job in the agreed working directory. It does not authorize overwriting unrelated files, deleting data, cancelling jobs, modifying startup files, or submitting additional retries.
 - `scancel`, destructive replacement, deletion, and resubmission after a failed or ambiguous attempt each require explicit authorization for the exact target.
 - Never request, enter, capture, print, or store passwords, OTP values, SSH keys, or tokens. The user owns and authenticates the local `ssh-proxy` process.
@@ -18,7 +20,7 @@ Run an authorized Nano4 Slurm workflow from preflight through final reporting. K
 
 ## Required workflow
 
-Before preparing or submitting a job, read [references/job-lifecycle.md](references/job-lifecycle.md) completely and follow its preflight, single-submission, monitoring, and reporting rules.
+Before preparing, submitting, or performing ongoing lifecycle monitoring for a job, read [references/job-lifecycle.md](references/job-lifecycle.md) completely and follow its applicable preflight, single-submission, monitoring, and reporting rules.
 
 If the task needs upload or download, also read [references/file-transfer.md](references/file-transfer.md) completely before transferring anything. File-transfer authorization does not imply job submission, deletion, or overwrite permission.
 
@@ -30,7 +32,13 @@ Check the default local proxy endpoint before SSH:
 Test-NetConnection 127.0.0.1 -Port 2222 -InformationLevel Quiet
 ```
 
-If it is unavailable, ask the user to start `ssh-proxy` and complete password/OTP authentication in their own terminal. Do not repeatedly retry or treat a closed local port as proof Nano4 is down.
+If it is unavailable, ask the user to start `ssh-proxy` in their own terminal and complete password/OTP authentication there:
+
+```powershell
+.\ssh-proxy-windows-x64.exe nano4
+```
+
+Do not repeatedly retry or treat a closed local port as proof Nano4 is down. If the executable is missing, direct the user to the official [ssh-proxy Releases page](https://github.com/gemini960114/ssh-proxy/releases). Do not automatically download or execute a release binary without an explicit request.
 
 At the beginning of a new remote session, confirm:
 
@@ -52,7 +60,6 @@ Compare the observed user with the project-level expected account before any acc
 
 - Obtain the current `PROJECT_ID` from `wallet`; never use a hard-coded or previously reported project balance.
 - Recheck partition state, `AllowAccounts`, `DenyAccounts`, QoS, node/task/CPU shape, memory, and wall-time limits immediately before submission.
-- Treat `ngs62g` and any resource profile as an example only. Its current configuration must be verified before generating directives or submitting.
 - Specify both `-A PROJECT_ID` and `-p PARTITION` for every submission unless the user explicitly requests another convention.
 
 ## Completion

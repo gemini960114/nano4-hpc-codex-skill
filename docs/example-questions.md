@@ -9,7 +9,7 @@
 ## 連線與身分
 
 - 「請檢查 `nano4-proxy` 是否可用，並確認遠端 hostname、帳號與時間。」
-- 「請確認目前連到的是不是 Nano4，而且帳號是 `c00cjz00`。」
+- 「請確認目前連到的是不是 Nano4，而且 `whoami` 與我的 SSH config 帳號一致。」
 - 「如果本機 proxy 尚未啟動，請提供下載與啟動方式；不要自行下載或處理 OTP。」
 
 ## Slurm 資源
@@ -41,7 +41,7 @@
 - 「請使用 `hfsquota` 查詢我在 `/home` 與 `/work` 的個人 quota、已用及剩餘空間。」
 - 「我的個人儲存空間是否接近上限？請不要用 `df` 推測個人 quota。」
 - 「請區分個人 quota 與整個共享檔案系統的容量。」
-- 「請確認 `/home/c00cjz00` 與 `/work/c00cjz00` 是否存在及其權限，但不要掃描整個目錄。」
+- 「請根據遠端 `whoami` 確認我的 `$HOME` 與 `/work/USERNAME` 是否存在及其權限，但不要掃描整個目錄。」
 
 ## 產生腳本但不提交
 
@@ -63,6 +63,21 @@
 
 > 請先確認 project `PROJECT_ID` 仍有 SU，且允許使用 partition `PARTITION`；確認後建立 `logs` 目錄，將我提供的腳本寫入遠端並使用 `sbatch -A PROJECT_ID -p PARTITION job.sh` 提交。提交完成後回報 job ID。
 
-> 請先顯示 job ID `123456` 的擁有者與目前狀態；確認它屬於帳號 `c00cjz00` 後，使用 `scancel 123456` 取消並重新查詢狀態。
+> 請先顯示 job ID `123456` 的擁有者與目前狀態；確認它屬於目前的 `whoami` 後，使用 `scancel 123456` 取消並重新查詢狀態。
+
+## 完整 Job lifecycle
+
+- 「請使用 `$nano4-slurm-job-runner`，先重新驗證 wallet、partition、QoS 與資源限制，再於我指定的工作目錄建立腳本並提交一次。請回報 Job ID，使用結構化 `squeue` 和 `sacct` 監控到完成，最後檢查 stdout、stderr、ExitCode、Elapsed 與 MaxRSS。」
+- 「請提交後只監控到 job 進入 running 狀態便停止，不要取消、重送或清理檔案。」
+- 「這次只診斷 pending 原因，不要變更資源、requeue、cancel 或重新提交。」
+
+若 `sbatch` 回應中斷或結果不明，Runner 應先用 job name、使用者與提交時間查詢是否已建立工作，不可直接重送。
+
+## Nano4 檔案傳輸
+
+- 「請先確認遠端目標不存在，再使用 Nano4 相容的 `scp -O` 將 `job.sh` 上傳到我指定的工作目錄；不要提交工作。」
+- 「請使用 `scp -O` 下載指定的 stdout 檔案到目前資料夾，不要下載其他結果或目錄。」
+
+`scp -O` 用於 Nano4 拒絕 SFTP subsystem 或一般 `scp` 出現 subsystem 錯誤的情況，不應當成所有 SSH 主機的通用設定。
 
 不要使用模糊說法，例如「幫我處理這個 job」。若只想診斷，請明確寫「只查詢與說明，不要提交、取消或修改任何內容」。

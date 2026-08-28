@@ -1,4 +1,4 @@
 interface:
   display_name: "Nano4 HPC Inspector"
-  short_description: "Inspect Nano4 Slurm, projects, modules, and quotas"
-  default_prompt: "Use $nano4-hpc-inspector to inspect my current Nano4 resources and access."
+  short_description: "Read-only Nano4 Slurm, project, module, and quota checks"
+  default_prompt: "Use $nano4-hpc-inspector to perform a read-only inspection of my current Nano4 resources and access."

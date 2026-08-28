@@ -35,7 +35,7 @@ Get-FileHash .\ssh-proxy-windows-x64.exe -Algorithm SHA256
 ```sshconfig
 Host nano4
   HostName nano4.nchc.org.tw
-  User c00cjz00
+  User YOUR_USERNAME
 
   PubkeyAuthentication no
   KbdInteractiveAuthentication yes
@@ -48,7 +48,7 @@ Host nano4
 Host nano4-proxy
   HostName 127.0.0.1
   Port 2222
-  User c00cjz00
+  User YOUR_USERNAME
 
   StrictHostKeyChecking no
   UserKnownHostsFile /dev/null
@@ -89,7 +89,7 @@ Test-NetConnection 127.0.0.1 -Port 2222 -InformationLevel Quiet
 ssh nano4-proxy 'hostname; whoami; date --iso-8601=seconds'
 ```
 
-本專案預期遠端帳號為 `c00cjz00`。若顯示其他帳號，應停止帳號相關查詢並先檢查 SSH 設定。
+`whoami` 應與 SSH config 中的 `YOUR_USERNAME` 相符。若顯示其他帳號，應停止帳號相關操作並先檢查 SSH 設定。
 
 ## 5. 與 Codex 協作
 
@@ -98,6 +98,12 @@ ssh nano4-proxy 'hostname; whoami; date --iso-8601=seconds'
 > 我已啟動 `nano4-proxy` 並完成 OTP。請先確認 hostname、whoami 與遠端時間，再執行唯讀查詢。
 
 若 proxy 尚未啟動，Codex 應先檢查本機 port，提供啟動或下載指引，並等待使用者完成驗證，而不是反覆嘗試 SSH。
+
+Codex 依任務使用不同 Skill：
+
+- 唯讀資源、wallet、partition、module、quota 或 job 狀態查詢使用 `nano4-hpc-inspector`。
+- 明確要求準備、提交、監控或控制 Slurm job 時使用 `nano4-slurm-job-runner`。
+- 上傳、覆寫、刪除、`sbatch`、`srun` 與 `scancel` 不會由唯讀查詢自動取得授權。
 
 ## 連線時效
 

@@ -39,9 +39,15 @@
 - [最近產生的環境報告](reports/)
 - [代理操作規則](AGENTS.md)
 
+## Skills
+
+- [`nano4-hpc-inspector`](.agents/skills/nano4-hpc-inspector/SKILL.md)：唯讀查詢 Slurm 資源與 job 狀態、wallet、account access、modules 及 quota；可以檢查或草擬 batch script，但不提交。
+- [`nano4-slurm-job-runner`](.agents/skills/nano4-slurm-job-runner/SKILL.md)：在使用者明確授權後準備、提交、監控並報告 Slurm job；檔案傳輸與 job control 也由此 Skill 處理。
+
 ## 使用原則
 
 - Slurm partition、project SU 餘額、module 版本及 quota 都是動態資訊；需要時重新查詢。
 - 查詢預設為唯讀。提交或取消工作、啟動互動工作，以及修改或刪除遠端檔案，都必須在問題中明確授權。
 - Slurm 提交範例應同時指定 project 與 partition，例如 `sbatch -A PROJECT_ID -p PARTITION job.sh`。
+- `PROJECT_ID` 必須來自當次 `wallet` 與 access 檢查；partition 的 QoS 與資源限制也必須在提交前重查。
 - 登入節點只適合輕量檢查，實際計算應交給 Slurm。

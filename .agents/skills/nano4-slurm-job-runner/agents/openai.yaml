@@ -1,0 +1,4 @@
+interface:
+  display_name: "Nano4 Slurm Job Runner"
+  short_description: "Submit and monitor authorized Nano4 Slurm jobs"
+  default_prompt: "Use $nano4-slurm-job-runner to validate, submit, monitor, and report my authorized Nano4 Slurm job."

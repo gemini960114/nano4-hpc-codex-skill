@@ -1,19 +1,21 @@
 ---
 name: nano4-hpc-inspector
-description: Inspect the Nano4 HPC environment through the nano4-proxy SSH alias, including Slurm partitions and account access, active wallet projects, environment modules, and /home or /work quotas. Use when the user asks what Nano4 resources, projects, software, or storage they can currently use.
+description: Perform read-only inspection of Nano4 HPC through the nano4-proxy SSH alias, including Slurm resources and job state, active wallet projects, account access, modules, and storage quotas. Do not use it to submit or cancel jobs or modify remote data.
 ---
 
 # Nano4 HPC Inspector
 
-Inspect current remote state and report it in a concise, decision-ready form. Treat balances, partitions, modules, and quotas as dynamic; never substitute values copied from an earlier conversation.
+Inspect current remote state and report it in a concise, decision-ready form. Treat balances, partitions, QoS, modules, job state, and quotas as dynamic; never substitute values copied from an earlier conversation.
 
 ## Scope and safety
 
-- Connect with the existing SSH alias `nano4-proxy`. Do not request, print, copy, or store SSH credentials.
-- Start with read-only commands. Running `sbatch`, `srun`, `scancel`, changing quotas, loading modules into persistent startup files, or editing remote files requires an explicit user request.
-- Confirm `hostname`, `whoami`, and the remote timestamp so results are attributable and current. The expected personal account for this project is `c00cjz00`; flag a different identity instead of silently continuing with account-specific conclusions.
+- This skill is read-only. It may inspect or draft a batch script locally, but it must not run `sbatch`, `srun`, `scancel`, transfer files, or change remote data.
+- Use `nano4-slurm-job-runner` when the user explicitly requests job submission, job control, remote job setup, or file transfer for a job.
+- Connect only through the existing SSH alias `nano4-proxy`. Never request, enter, capture, print, or store passwords, OTP values, SSH keys, or tokens.
+- Confirm `hostname`, `whoami`, and the remote timestamp before account-specific conclusions. Compare the observed identity with any project-level expected account and stop if they differ.
 - When invoking SSH from PowerShell, keep the remote payload single-quoted where possible so variables such as `$(whoami)` are expanded remotely rather than locally.
 - A slow query is not evidence that no data exists. In particular, allow `hfsquota` time to contact the storage service.
+- Keep login-node work lightweight. Use Slurm for computation.
 
 ## Local proxy prerequisite
 
@@ -41,6 +43,13 @@ If the result is `False`:
 - Do not automatically download or execute a release binary without an explicit user request. Never request, enter, capture, print, or store the user's password or OTP.
 
 The proxy is temporary and may stop after its configured no-client idle timeout or maximum lifetime. Check it again for a new task or after a connection failure rather than assuming an earlier proxy process remains available. A user-owned `ssh-proxy` process is distinct from an agent-owned persistent `ssh -tt nano4-proxy` session.
+
+## Query execution and parsing
+
+- Prefer a non-interactive SSH command for fixed read-only queries.
+- Prefer explicit fields and pipe-delimited output such as `squeue -o` and `sacct -P`. Do not depend on column alignment, color, prompts, or terminal wrapping.
+- Use a retained PTY only when shell state materially helps. Wrap parseable PTY commands with unique begin/end markers, capture exit status, and account for ANSI control codes or wrapped lines.
+- Keep stdout, stderr, and command exit status distinct when the result will be parsed.
 
 ## Persistent interactive SSH
 
@@ -70,7 +79,7 @@ Close an agent-owned session cleanly when it is no longer needed:
 exit\n
 ```
 
-This technique reuses one interactive shell but does not replace the existing proxy, create Slurm resources, or broaden permission to run mutating commands. Continue to require explicit user authorization for `sbatch`, `srun`, `scancel`, remote edits, and deletions, and keep computation off the login node.
+This technique reuses one interactive shell but does not replace the existing proxy, create Slurm resources, or broaden permission to mutate remote state.
 
 ## Choose the smallest query set
 
@@ -83,47 +92,28 @@ ssh nano4-proxy 'hostname; whoami; date --iso-8601=seconds'
 ssh nano4-proxy 'wallet'
 ssh nano4-proxy 'sinfo -h -o "%P|%a|%l|%D|%t"'
 ssh nano4-proxy 'scontrol show partition -o'
-ssh nano4-proxy 'sacctmgr -n -P show assoc where user=c00cjz00 format=Cluster,Account,User,Partition,QOS,DefaultQOS'
+ssh nano4-proxy 'remote_user=$(whoami); sacctmgr -n -P show assoc where user="$remote_user" format=Cluster,Account,User,Partition,QOS,DefaultQOS'
 ```
 
 Interpret the results as follows:
 
 - Use `wallet` as the primary list of currently usable projects with positive SU balance.
 - Treat `sacctmgr` associations as account history or authorization metadata; an association alone does not prove that a project still has spendable SU.
-- `sinfo` shows cluster availability, not user authorization. Cross-check `AllowAccounts`, `DenyAccounts`, partition state, and an active wallet project before saying the user can submit there.
+- `sinfo` shows cluster availability, not user authorization. Cross-check `AllowAccounts`, `DenyAccounts`, partition state, QoS, and an active wallet project before saying a combination is usable.
 - Partitions may expose the same nodes under different limits. Do not add their idle-node counts unless they are known to represent distinct hardware.
 - Report partition, maximum wall time, idle/mixed/down state, and compatible active project IDs. Separate visible-but-restricted partitions.
-- Note the Slurm default account when relevant, but recommend explicit `-A PROJECT_ID` and `-p PARTITION` if the default account is absent from `wallet`.
+- Recommend explicit `-A PROJECT_ID` and `-p PARTITION` in generated examples, but never fill `PROJECT_ID` from stale output.
 
-### NGS batch submissions
+### Slurm job status
 
-Treat NGS partition names as lowercase and case-sensitive. Before submitting, check the selected project's current wallet balance and confirm that the partition's `AllowAccounts` includes it. For `ngs62g`, use the queue's full resource profile: one node, one task, 8 CPU cores, and 62 GB of memory.
-
-Use this batch-script pattern for a short `ngs62g` job:
+Use structured read-only queries when the user asks about queued, running, or completed jobs:
 
 ```bash
-#!/usr/bin/env bash
-#SBATCH --job-name=fastq_qc_stats
-#SBATCH --partition=ngs62g
-#SBATCH --nodes=1
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=62G
-#SBATCH --time=00:10:00
-#SBATCH --output=logs/fastq_qc_%j.out
-#SBATCH --error=logs/fastq_qc_%j.err
-
-sleep 600
+ssh nano4-proxy 'squeue -h -u "$(whoami)" -o "%i|%T|%P|%a|%j|%M|%l|%R"'
+ssh nano4-proxy 'sacct -n -P -u "$(whoami)" -S today --format=JobIDRaw,JobName,Partition,Account,State,ExitCode,Elapsed,AllocCPUS,ReqMem,MaxRSS'
 ```
 
-Create the log directory before submission because Slurm does not create missing parent directories. Specify the active wallet project explicitly at submission time:
-
-```bash
-mkdir -p logs
-sbatch -A GOV115088 -p ngs62g job.sh
-```
-
-If a different project is requested, replace `GOV115088` only after confirming it is active in `wallet` and permitted by `ngs62g`. Do not silently substitute a similarly named project or partition.
+For a known job, add `-j JOB_ID`. Explain pending reasons and terminal states, but do not cancel, requeue, or resubmit from this skill.
 
 ### Environment modules
 
@@ -140,7 +130,7 @@ Use:
 ```bash
 ssh nano4-proxy 'hfsquota 2>&1'
 ssh nano4-proxy 'df -hT /home /work'
-ssh nano4-proxy 'ls -ld /home/c00cjz00 /work/c00cjz00'
+ssh nano4-proxy 'remote_user=$(whoami); ls -ld "$HOME" "/work/$remote_user"'
 ```
 
 - `hfsquota` is authoritative for the user's used space, hard limit, usage percentage, and status. It may take more than a minute; wait for its result when possible.
@@ -152,7 +142,7 @@ ssh nano4-proxy 'ls -ld /home/c00cjz00 /work/c00cjz00'
 ## Reporting
 
 - State the remote host, user, and query time.
-- Prefer compact tables for projects, partitions, modules, and quotas.
+- Prefer compact tables for projects, partitions, jobs, modules, and quotas.
 - Distinguish observed facts from inferred compatibility.
 - Include only the commands that help the user reproduce or act on the result.
 - Never expose unrelated users, the full cluster association list, credentials, or private environment values.
